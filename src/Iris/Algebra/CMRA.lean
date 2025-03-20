@@ -28,7 +28,7 @@ class CMRA (α : Type _) extends OFE α where
 
   pcore_op_left : pcore x = some cx → op cx x ≡ x
   pcore_idem : pcore x = some cx → pcore cx ≡ some cx
-  pcore_op_mono : pcore x = some cx → ∃ cy, pcore (op x y) = some (op cx cy)
+  pcore_op_mono y: pcore x = some cx → ∃ cy, pcore (op x y) = some (op cx cy)
 
   extend : validN n x → x ≡{n}≡ op y₁ y₂ →
     Σ' z₁ z₂, x ≡ op z₁ z₂ ∧ z₁ ≡{n}≡ y₁ ∧ z₂ ≡{n}≡ y₂
@@ -104,7 +104,7 @@ namespace CRMA
   variable [cmr: CMRA α]
 
   -- Op
-  theorem op_right_equiv (x: α) {y z: α}(e: y ≡ z): x • y ≡ x • z := cmr.op_ne.eqv e
+  theorem op_right_eqv (x: α) {y z: α}(e: y ≡ z): x • y ≡ x • z := cmr.op_ne.eqv e
 
   theorem op_right_dist (x: α) {y z: α}(e: y ≡{n}≡ z): x • y ≡{n}≡ x • z :=
     cmr.op_ne.ne e
@@ -120,10 +120,10 @@ namespace CRMA
       _     ≡{n}≡ z • y := op_right_dist z e
       _     ≡{n}≡ y • z := op_commN
 
-  theorem op_left_equiv {x y: α} (z: α)(e: x ≡ y): x • z ≡ y • z :=
+  theorem op_left_eqv {x y: α} (z: α)(e: x ≡ y): x • z ≡ y • z :=
     calc
       x • z ≡ z • x := cmr.comm
-      _     ≡ z • y := op_right_equiv z e
+      _     ≡ z • y := op_right_eqv z e
       _     ≡ y • z := cmr.comm
 
   theorem op_opM_assoc (x y: α) (mz: Option α) : (x • y) •? mz ≡ x • (y •? mz) :=
@@ -133,23 +133,23 @@ namespace CRMA
   theorem valid_mapN {x y: α} (f: ∀n, ✓{n}x → ✓{n}y): ✓x → ✓y :=
     λv ↦ cmr.valid_iff_validN.mpr (λn ↦ f n (cmr.valid_iff_validN.mp v n))
 
-  theorem validN_equiv {x y: α}: x ≡ y → ✓{n}x → ✓{n}y :=
+  theorem validN_eqv {x y: α}: x ≡ y → ✓{n}x → ✓{n}y :=
     λe v ↦ cmr.validN_ne (cmr.equiv_dist.mp e n) v
 
-  theorem valid_equiv {x y: α}: x ≡ y → ✓x → ✓y :=
-    λe ↦ valid_mapN (λ_ ↦ validN_equiv e)
+  theorem valid_eqv {x y: α}: x ≡ y → ✓x → ✓y :=
+    λe ↦ valid_mapN (λ_ ↦ validN_eqv e)
 
   theorem validN_le n n' {x: α} : n' ≤ n → ✓{n} x → ✓{n'} x :=
     λle ↦ le.recOn id (λ _ ih vs ↦ ih (CMRA.validN_succ vs))
 
   theorem validN_op_r {n} {x y: α} : ✓{n} (x • y) → ✓{n} y :=
-    λv ↦ cmr.validN_op_left (validN_equiv cmr.comm v)
+    λv ↦ cmr.validN_op_left (validN_eqv cmr.comm v)
 
   theorem valid_op_r (x y: α) : ✓ (x • y) → ✓ y :=
     valid_mapN (λ_ ↦ validN_op_r)
 
   theorem valid_op_l {x y: α} : ✓ (x • y) → ✓ x :=
-    λv ↦ valid_op_r y x (valid_equiv cmr.comm v)
+    λv ↦ valid_op_r y x (valid_eqv cmr.comm v)
 
 
   -- Core
@@ -169,7 +169,7 @@ namespace CRMA
   theorem pcore_l' {x: α} {cx} (e: cmr.pcore x ≡ some cx): cx • x ≡ x :=
     let ⟨z, pz, ez⟩ := OFE.equiv_some e
     calc
-      cx • x ≡ z • x := op_left_equiv _ ez.symm
+      cx • x ≡ z • x := op_left_eqv _ ez.symm
       _      ≡ x     := cmr.pcore_op_left pz
 
   theorem pcore_r {x: α} {cx} (e: cmr.pcore x = some cx): x • cx ≡ x :=
@@ -179,7 +179,7 @@ namespace CRMA
 
   theorem pcore_r' {x: α} {cx} (e: cmr.pcore x ≡ some cx): x • cx ≡ x :=
     let ⟨_, pz, ez⟩ := OFE.equiv_some e
-    (op_right_equiv x ez).symm.trans (pcore_r pz)
+    (op_right_eqv x ez).symm.trans (pcore_r pz)
 
   theorem pcore_idemp' {x: α} {cx} (e: cmr.pcore x ≡ some cx): cmr.pcore cx ≡ some cx :=
     let ⟨y, py, (ey: y ≡ cx)⟩ := OFE.equiv_some e
@@ -188,21 +188,21 @@ namespace CRMA
       _            ≡ some y      := cmr.pcore_idem py
       _            ≡ some cx     := ey
 
-  theorem pcore_dup (x: α) cx (e: cmr.pcore x = some cx): cx ≡ cx • cx :=
+  theorem pcore_dup {x: α}{cx} (e: cmr.pcore x = some cx): cx ≡ cx • cx :=
     (pcore_r' (cmr.pcore_idem e)).symm
 
-  theorem pcore_dup' (x: α) cx (e: cmr.pcore x ≡ some cx): cx ≡ cx • cx :=
+  theorem pcore_dup' {x: α}{cx} (e: cmr.pcore x ≡ some cx): cx ≡ cx • cx :=
     let ⟨z, pz, ez⟩ := OFE.equiv_some e
     have : z • z ≡ z := pcore_r' (cmr.pcore_idem pz)
     calc
       cx ≡ z := ez.symm
       _ ≡ z • z := this.symm
-      _ ≡ cx • z := op_left_equiv z ez
-      _ ≡ cx • cx := op_right_equiv cx ez
+      _ ≡ cx • z := op_left_eqv z ez
+      _ ≡ cx • cx := op_right_eqv cx ez
 
   theorem pcore_validN {n} {x: α} {cx} : cmr.pcore x = some cx → ✓{n} x → ✓{n} cx :=
     λe v ↦
-      have: ✓{n}x • cx := validN_equiv (pcore_r e).symm v
+      have: ✓{n}x • cx := validN_eqv (pcore_r e).symm v
       validN_op_r this
 
   theorem pcore_valid (x: α) cx : cmr.pcore x = some cx → ✓ x → ✓ cx :=
@@ -213,13 +213,13 @@ namespace CRMA
     n.recOn ex.exclusive0_l (λ_ ih ↦ ih ∘ cmr.validN_succ)
 
   theorem exclusiveN_r n (x: α) [ex: CMRA.Exclusive x] y : ✓{n} (y • x) → False :=
-    λv ↦ exclusiveN_l n x y (validN_equiv cmr.comm v)
+    λv ↦ exclusiveN_l n x y (validN_eqv cmr.comm v)
 
   theorem exclusive_l  (x: α) [ex: CMRA.Exclusive x] y : ✓ (x • y) → False :=
     λv ↦ ex.exclusive0_l (cmr.valid_iff_validN.mp v 0)
 
   theorem exclusive_r  (x: α) [ex: CMRA.Exclusive x] y : ✓ (y • x) → False :=
-    λv ↦ exclusive_l x y (valid_equiv cmr.comm v)
+    λv ↦ exclusive_l x y (valid_eqv cmr.comm v)
 
   theorem exclusiveN_opM n (x: α) [ex: CMRA.Exclusive x] my : ✓{n} (x •? my) → my = none :=
     match my with
@@ -237,12 +237,12 @@ namespace CRMA
       : x ≼ y → ✓ y → False :=
     λle v ↦
       have ⟨z, hz⟩ := le
-      have: ✓{0}x • z := validN_equiv hz (cmr.valid_iff_validN.mp v 0)
+      have: ✓{0}x • z := validN_eqv hz (cmr.valid_iff_validN.mp v 0)
       ex.exclusive0_l this
 
   -- Order
   instance : Trans cmr.Equiv cmr.included cmr.included where
-    trans := λe l ↦ l.elim λt et ↦ ⟨t, et.trans (op_left_equiv _ e.symm)⟩
+    trans := λe l ↦ l.elim λt et ↦ ⟨t, et.trans (op_left_eqv _ e.symm)⟩
 
   instance : Trans cmr.included cmr.Equiv cmr.included where
     trans := λl e ↦ l.elim λt et ↦ ⟨t, e.symm.trans et⟩
@@ -262,7 +262,7 @@ namespace CRMA
     suffices h: z ≡ x • (w • t) from ⟨w • t, h⟩
     calc
       z ≡ y • t := ht
-      _ ≡ (x • w) • t := op_left_equiv _ hw
+      _ ≡ (x • w) • t := op_left_eqv _ hw
       _ ≡ x • (w • t) := cmr.assoc.symm
 
   theorem includedN_trans {x y z: α}(i1: x ≼{n} y)(i2: y ≼{n} z): x ≼{n} z :=
@@ -281,7 +281,7 @@ namespace CRMA
     trans := CRMA.includedN_trans
 
   theorem valid_included (x y: α) : x ≼ y → ✓ y → ✓ x :=
-    λle v ↦ le.elim (λ_ hz ↦ valid_op_l (valid_equiv hz v))
+    λle v ↦ le.elim (λ_ hz ↦ valid_op_l (valid_eqv hz v))
 
   theorem validN_includedN n (x y: α) : x ≼{n} y → ✓{n} y → ✓{n} x :=
     λle v ↦ le.elim (λ_ hz ↦ cmr.validN_op_left (CMRA.validN_ne hz v))
@@ -311,17 +311,17 @@ namespace CRMA
     : x ≼ y → cmr.pcore x = some cx → ∃ cy, cmr.pcore y = some cy ∧ cx ≼ cy :=
   λle e ↦
     let ⟨w, hw⟩ := le
-    have ⟨z, hz⟩ := cmr.pcore_op_mono e
+    have ⟨z, hz⟩ := cmr.pcore_op_mono _ e
     have h2: cmr.pcore y ≡ cmr.pcore (x • w) := NonExpansive.eqv hw
     let ⟨t, ht, et⟩ := OFE.equiv_some (hz ▸ h2)
     ⟨t, ht, z, et⟩
 
-  theorem pcore_mono' (x y: α) cx :
+  theorem pcore_mono' {x y: α} {cx} :
       x ≼ y → cmr.pcore x ≡ some cx → ∃ cy, cmr.pcore y = some cy ∧ cx ≼ cy :=
     λle e ↦
       let ⟨_, hw, ew⟩ := OFE.equiv_some e
       have ⟨t, ht, z, et⟩ := pcore_mono le hw
-      ⟨t, ht, z, et.trans (op_left_equiv z ew)⟩
+      ⟨t, ht, z, et.trans (op_left_eqv z ew)⟩
 
   theorem pcore_monoN' n (x y: α) cx :
       x ≼{n} y → cmr.pcore x ≡{n}≡ some cx → ∃ cy, cmr.pcore y = some cy ∧ cx ≼{n} cy :=
@@ -348,7 +348,7 @@ namespace CRMA
       let ⟨w, hw⟩ := le
       suffices h: z • y ≡ (z • x) • w from ⟨w, h⟩
       calc
-        z • y ≡ z • (x • w) := op_right_equiv z hw
+        z • y ≡ z • (x • w) := op_right_eqv z hw
         _     ≡ (z • x) • w := cmr.assoc
 
   theorem monoN_l n (x y z: α) : x ≼{n} y → z • x ≼{n} z • y :=
@@ -375,9 +375,9 @@ namespace CRMA
       let ⟨w, hw⟩ := le
       suffices h: y • z ≡ (x • z) • w from ⟨w, h⟩
       calc
-        y • z ≡ (x • w) • z := op_left_equiv z hw
+        y • z ≡ (x • w) • z := op_left_eqv z hw
         _     ≡ x • (w • z) := cmr.assoc.symm
-        _     ≡ x • (z • w) := op_right_equiv x cmr.comm
+        _     ≡ x • (z • w) := op_right_eqv x cmr.comm
         _     ≡ (x • z) • w := cmr.assoc
 
   theorem monoN n (x1 x2 y1 y2: α) : x1 ≼{n} y1 → x2 ≼{n} y2 → x1 • x2 ≼{n} y1 • y2 :=
@@ -399,13 +399,46 @@ namespace CRMA
       let ⟨w, hw⟩ := l1;  let ⟨t, ht⟩ := l2
       suffices h: y1 • y2 ≡ (x1 • x2) • (w • t) from ⟨w • t, h⟩
       calc
-        y1 • y2 ≡ (x1 • w) • y2 := op_left_equiv _ hw
-        _       ≡ (x1 • w) • (x2 • t) := op_right_equiv _ ht
+        y1 • y2 ≡ (x1 • w) • y2 := op_left_eqv _ hw
+        _       ≡ (x1 • w) • (x2 • t) := op_right_eqv _ ht
         _       ≡ x1 • (w • (x2 • t)) := cmr.assoc.symm
-        _       ≡ x1 • ((x2 • t) • w) := op_right_equiv _ (cmr.comm)
+        _       ≡ x1 • ((x2 • t) • w) := op_right_eqv _ (cmr.comm)
         _       ≡ (x1 • (x2 • t)) • w := cmr.assoc
-        _       ≡ ((x1 • x2) • t) • w := op_left_equiv _ cmr.assoc
+        _       ≡ ((x1 • x2) • t) • w := op_left_eqv _ cmr.assoc
         _       ≡ (x1 • x2) • (t • w) := cmr.assoc.symm
-        _       ≡ (x1 • x2) • (w • t) := op_right_equiv _ (cmr.comm)
+        _       ≡ (x1 • x2) • (w • t) := op_right_eqv _ (cmr.comm)
 
+  theorem core_eqv_dup (x: α)[ci: CMRA.CoreId x]: x ≡ x • x := pcore_dup' ci.core_id
+
+  theorem op_core_of_included {x y: α}[cx: CMRA.CoreId x](inc: x ≼ y): y ≡ y • x :=
+    sorry
+
+  theorem coreId_of_pcore_eq_some {x y: α}(e: cmr.pcore x = some y): CMRA.CoreId y :=
+    have := cmr.pcore_idem e
+    { core_id := this }
+
+  section total
+    variable [tot: CMRA.IsTotal α]
+
+    theorem op_core {x: α}: x • cmr.core x ≡ x := sorry
+    theorem core_op_core  {x: α}: cmr.core x • cmr.core x ≡ x := sorry
+    theorem validN_core {n}{x: α}(v: ✓{n} x): ✓{n} cmr.core x := sorry
+    theorem valid_core {x: α}(v: ✓ x): ✓ cmr.core x := sorry
+    theorem coreId_iff_core_eqv_self: CMRA.CoreId x ↔ cmr.core x ≡ x := sorry
+    theorem core_eqv_self_of_coreId [ci: CMRA.CoreId x]: cmr.core x ≡ x :=
+      coreId_iff_core_eqv_self.mp ci
+
+    theorem core_inc_self {x: α} [ci: CMRA.CoreId x]: cmr.core x ≼ x :=
+      suffices h: x ≡ CMRA.core x • x from ⟨x, h⟩
+      calc
+        x ≡ x • x := core_eqv_dup x
+        _ ≡ CMRA.core x • x := op_left_eqv _ (core_eqv_self_of_coreId.symm)
+
+    -- Global Instance cmra_includedN_preorder n : PreOrder (@includedN A _ _ n).
+    -- Global Instance cmra_included_preorder : PreOrder (@included A _ _).
+
+    theorem core_incN_core {n} {x y: α} : x ≼{n} y → cmr.core x ≼{n} cmr.core y :=
+      sorry
+
+  end total
 end CRMA
