@@ -181,7 +181,7 @@ instance : CMRA.CoreId (DFrac.discard (F := F)) where
   core_id := by simp [CMRA.pcore, DFrac.pcore]
 
 @[rocq_alias dfrac_discard_update]
-theorem DFrac.update_discard {dq : DFrac F} : dq ~~> .discard := by
+theorem update_discard {dq : DFrac F} : dq ~~> .discard := by
   intros n q H
   apply (CMRA.valid_iff_validN' n).mp
   have H' := (CMRA.valid_iff_validN' n).mpr H
@@ -191,7 +191,7 @@ theorem DFrac.update_discard {dq : DFrac F} : dq ~~> .discard := by
   · cases dq <;> first | exact Fractional.of_add_right H | exact H
 
 @[rocq_alias dfrac_undiscard_update]
-theorem DFrac.update_acquire [IsSplitFraction F] :
+theorem update_acquire [IsSplitFraction F] :
     (.discard : DFrac F) ~~>: fun k => ∃ q, k = .own q := by
   apply UpdateP.discrete.mpr
   rintro (_|q)
