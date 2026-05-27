@@ -315,7 +315,9 @@ theorem ghost_map_auth_agree γ (dq1 dq2 : DFrac F) (m1 m2 : H V) :
 
 @[rocq_alias ghost_map_auth_persist]
 theorem ghost_map_auth_persist γ dq (m : H V) :
-  ⊢@{IProp GF} (γ ↪●MAP{dq} m) ==∗ γ ↪●MAP{.discard} m := sorry
+    ⊢@{IProp GF} (γ ↪●MAP{dq} m) ==∗ γ ↪●MAP{.discard} m := by
+  unfold ghost_map_auth
+  iapply iOwn_update auth_dfrac_discard
 
 @[rocq_alias ghost_map_auth_unpersist]
 theorem ghost_map_auth_unpersist γ (m : H V) :
@@ -325,7 +327,14 @@ theorem ghost_map_auth_unpersist γ (m : H V) :
 
 @[rocq_alias ghost_map_lookup]
 theorem ghost_map_lookup {γ dq} {m : H V} {k : K} {dq' v} :
-  ⊢@{IProp GF} (γ ↪●MAP{dq} m) -∗ (γ ↪◯MAP[k]{dq'} v) -∗ ⌜get? m k = some v⌝ := sorry
+    ⊢@{IProp GF} (γ ↪●MAP{dq} m) -∗ (γ ↪◯MAP[k]{dq'} v) -∗ ⌜get? m k = some v⌝ := by
+  iintro _ _;
+  unfold ghost_map_auth ghost_map_elem
+  rewrite [←IProp.ext iOwn_op]
+  iintro _; refine iOwn_cmraValid.trans ?_; iintro %h;
+  ipure_intro
+  have ⟨av', _, _, h_av', _, h⟩ := auth_op_frag_valid_total_discrete_iff h
+  cases h₂ : get? m k <;> grind [Std.LawfulPartialMap.get?_map,Agree.toAgree_included, OFE.leibniz]
 
 @[rocq_alias ghost_map_lookup_combine_gives_1]
 instance ghost_map_lookup_combine_gives_1 γ (m : H V) (k : K) (dq1 dq2 : DFrac F) (v : V) :
@@ -353,9 +362,12 @@ theorem ghost_map_insert {γ} {m : H V} (k : K) (v : V) :
   ⊢@{IProp GF} (γ ↪●MAP m) ==∗ (γ ↪●MAP insert m k v) ∗ γ ↪◯MAP[k] v := sorry
 
 @[rocq_alias ghost_map_insert_persist]
-theorem ghost_map_insert_persist {γ} {m : H V} (k : K) (v : V) :
-  get? m k = .none →
-  ⊢@{IProp GF} (γ ↪●MAP m) ==∗ (γ ↪●MAP insert m k v) ∗ (γ ↪◯MAP[k]{.discard} v) := sorry
+theorem ghost_map_insert_persist {γ} {m : H V} {k : K} {v : V} (get?_m_k : get? m k = .none) :
+    ⊢@{IProp GF} (γ ↪●MAP m) ==∗ (γ ↪●MAP insert m k v) ∗ (γ ↪◯MAP[k]{.discard} v) := by
+  iintro H
+  ihave >⟨$, H⟩ := ghost_map_insert _ _ _ _ _ get?_m_k $$ H
+  unfold ghost_map_elem
+  iapply iOwn_update update_frag_discard $$ H
 
 @[rocq_alias ghost_map_delete]
 theorem ghost_map_delete {γ} {m : H V} (k : K) (v : V) :
