@@ -321,7 +321,13 @@ theorem ghost_map_auth_persist γ dq (m : H V) :
 
 @[rocq_alias ghost_map_auth_unpersist]
 theorem ghost_map_auth_unpersist γ (m : H V) :
-  ⊢@{IProp GF} (γ ↪●MAP{.discard} m) ==∗ ∃ q, γ ↪●MAP{.own q} m := sorry
+    ⊢@{IProp GF} (γ ↪●MAP{.discard} m) ==∗ ∃ q, γ ↪●MAP{.own q} m := by
+  unfold ghost_map_auth
+  iintro H
+  -- have := auth_dfrac_acquire (F := F) (m1 := (Std.PartialMap.map (toAgree <| LeibnizO.mk ·) m))
+  -- have := iOwn_updateP (γ := γ) (a := HeapView.Auth .discard (Std.PartialMap.map (toAgree <| LeibnizO.mk ·) m))
+  -- TODO: I feel it should be a combination of the two above, but I couldn't get it to typecheck
+  sorry
 
 -- * lemmas about the interaction of [ghost_map_auth] with the elements
 
@@ -357,9 +363,18 @@ instance ghost_map_lookup_combine_gives_2 γ (m : H V) (k : K) (dq dq' : DFrac F
     imodintro; ipure_intro; assumption
 
 @[rocq_alias ghost_map_insert]
-theorem ghost_map_insert {γ} {m : H V} (k : K) (v : V) :
-  get? m k = .none →
-  ⊢@{IProp GF} (γ ↪●MAP m) ==∗ (γ ↪●MAP insert m k v) ∗ γ ↪◯MAP[k] v := sorry
+theorem ghost_map_insert {γ} {m : H V} {k : K} (v : V) (get?_m_k : get? m k = .none) :
+    ⊢@{IProp GF} (γ ↪●MAP m) ==∗ (γ ↪●MAP insert m k v) ∗ γ ↪◯MAP[k] v := by
+  unfold ghost_map_auth
+  iintro H
+  have get?_map_m_k : get? (Std.PartialMap.map (toAgree <| LeibnizO.mk ·) m) k = .none := by
+    sorry
+  have h_valid_av : ✓ (toAgree <| LeibnizO.mk v) := sorry
+  have := update_one_alloc (F := F) get?_map_m_k (show ✓ .own (1 : F) from DFrac.valid_own_one) h_valid_av
+  simp only [show (One.one : F) = 1 from rfl] at this
+  -- have := iOwn_update this
+  -- TODO: Also doesn't unify
+  sorry
 
 @[rocq_alias ghost_map_insert_persist]
 theorem ghost_map_insert_persist {γ} {m : H V} {k : K} {v : V} (get?_m_k : get? m k = .none) :
@@ -370,12 +385,24 @@ theorem ghost_map_insert_persist {γ} {m : H V} {k : K} {v : V} (get?_m_k : get?
   iapply iOwn_update update_frag_discard $$ H
 
 @[rocq_alias ghost_map_delete]
-theorem ghost_map_delete {γ} {m : H V} (k : K) (v : V) :
-  ⊢@{IProp GF} (γ ↪●MAP m) -∗ (γ ↪◯MAP[k] v) ==∗ γ ↪●MAP delete m k := sorry
+theorem ghost_map_delete {γ} {m : H V} {k : K} {v : V} :
+    ⊢@{IProp GF} (γ ↪●MAP m) -∗ (γ ↪◯MAP[k] v) ==∗ γ ↪●MAP delete m k := by
+  iintro h₁ h₂
+  icombine h₁ h₂ as h
+  unfold ghost_map_elem ghost_map_auth
+  rewrite [←IProp.ext iOwn_op]
+  iintro h
+  -- iapply iOwn_update update_one_delete $$ h
+  sorry
 
 @[rocq_alias ghost_map_update]
 theorem ghost_map_update {γ} {m : H V} (k : K) (v : V) (w : V) :
-  ⊢@{IProp GF} (γ ↪●MAP m) -∗ (γ ↪◯MAP[k] v) ==∗ (γ ↪●MAP insert m k w) ∗ γ ↪◯MAP[k] w := sorry
+  ⊢@{IProp GF} (γ ↪●MAP m) -∗ (γ ↪◯MAP[k] v) ==∗ (γ ↪●MAP insert m k w) ∗ γ ↪◯MAP[k] w := by
+  iintro auth_m frag_kv
+  ihave >aux := ghost_map_delete $$ auth_m frag_kv
+  ihave >⟨aux, $⟩ := ghost_map_insert _ _ _ _ w (get?_delete_eq rfl) $$ aux
+  -- TODO: Not sure how to close this...
+  sorry
 
 --  Big-op versions of above lemmas
 theorem ghost_map_lookup_big {γ dq} {m : H V} {dq'} m0 :
